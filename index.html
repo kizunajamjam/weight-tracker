@@ -20,11 +20,12 @@
   <style>
     /* ── テーマ変数 ── */
     :root, [data-theme="light"] {
-      --story-bg: #0a0a0a;
-      --story-pill-bg: rgba(255,255,255,0.08);
-      --story-pill-border: rgba(255,255,255,0.14);
-      --story-text: rgba(255,255,255,0.35);
-      --story-line: rgba(255,255,255,0.06);
+      --story-bg: #fafafa;
+      --story-fg: #111111;
+      --story-pill-bg: rgba(17,17,17,0.045);
+      --story-pill-border: rgba(17,17,17,0.1);
+      --story-text: rgba(17,17,17,0.4);
+      --story-line: rgba(17,17,17,0.06);
       --bg: #f4f4f4;
       --card: #ffffff;
       --text: #111111;
@@ -45,6 +46,7 @@
     }
     [data-theme="dark"] {
       --story-bg: #050505;
+      --story-fg: #ffffff;
       --story-pill-bg: rgba(255,255,255,0.06);
       --story-pill-border: rgba(255,255,255,0.1);
       --story-text: rgba(255,255,255,0.28);
@@ -68,11 +70,12 @@
       --shadow: rgba(0,0,0,0.4);
     }
     [data-theme="sand"] {
-      --story-bg: #140e06;
-      --story-pill-bg: rgba(255,230,180,0.08);
-      --story-pill-border: rgba(255,220,160,0.14);
-      --story-text: rgba(255,220,160,0.35);
-      --story-line: rgba(255,220,160,0.06);
+      --story-bg: #f7f1e6;
+      --story-fg: #1c1710;
+      --story-pill-bg: rgba(28,23,16,0.05);
+      --story-pill-border: rgba(28,23,16,0.12);
+      --story-text: rgba(28,23,16,0.45);
+      --story-line: rgba(28,23,16,0.07);
       --bg: #ede7dd;
       --card: #f8f4ee;
       --text: #1c1710;
@@ -92,11 +95,12 @@
       --shadow: rgba(0,0,0,0.04);
     }
     [data-theme="sage"] {
-      --story-bg: #071209;
-      --story-pill-bg: rgba(160,255,180,0.07);
-      --story-pill-border: rgba(140,230,160,0.13);
-      --story-text: rgba(160,230,160,0.35);
-      --story-line: rgba(140,230,160,0.06);
+      --story-bg: #eef4ec;
+      --story-fg: #131e11;
+      --story-pill-bg: rgba(19,30,17,0.05);
+      --story-pill-border: rgba(19,30,17,0.12);
+      --story-text: rgba(19,30,17,0.45);
+      --story-line: rgba(19,30,17,0.06);
       --bg: #e8ede5;
       --card: #f4f8f2;
       --text: #131e11;
@@ -528,45 +532,6 @@
       cursor: pointer;
     }
 
-    /* ストーリー 日数情報 */
-    .story-day-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 6px 0 10px;
-    }
-    .story-day-pill {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      padding: 6px 16px;
-      min-width: 82px;
-    }
-    .story-day-label {
-      font-family: 'Outfit', sans-serif;
-      font-size: 8px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.45);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 1px;
-    }
-    .story-day-num {
-      font-family: 'Outfit', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1.1;
-    }
-    .story-day-unit {
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 10px;
-      color: rgba(255,255,255,0.55);
-    }
-
     /* ストーリーボタン */
     .btn-story {
       width: 100%;
@@ -584,168 +549,6 @@
       transition: opacity 0.15s, background 0.15s;
     }
     .btn-story:active { opacity: 0.7; }
-
-    /* ストーリーオーバーレイ */
-    #story-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 500;
-      background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    #story-card {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 36px 20px 10px;
-      overflow: hidden;
-    }
-
-    .story-header {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .story-app-name {
-      font-family: 'Outfit', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .story-title {
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 26px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 2px;
-    }
-
-    .story-period {
-      font-size: 13px;
-      color: rgba(255,255,255,0.5);
-      margin-top: 4px;
-    }
-
-    /* ストーリー統計 */
-    .story-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .story-stat {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      padding: 9px 6px;
-      text-align: center;
-    }
-
-    .story-stat-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.45);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .story-stat-value {
-      font-size: 19px;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1;
-    }
-
-    .story-stat-unit {
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      margin-top: 2px;
-    }
-
-    .story-stat-value.s-good { color: #6ee7b7; }
-    .story-stat-value.s-warn { color: #fca5a5; }
-
-    /* ストーリーグラフ */
-    .story-chart-wrap {
-      flex: 1;
-      position: relative;
-      min-height: 100px;
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 10px 4px 4px;
-    }
-
-    /* ストーリーゴール表示 */
-    .story-goal-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 8px;
-      padding: 7px 14px;
-      background: rgba(248,113,113,0.12);
-      border: 1px solid rgba(248,113,113,0.3);
-      border-radius: 10px;
-    }
-
-    .story-goal-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fca5a5;
-    }
-
-    /* ストーリーフッター */
-    .story-footer {
-      padding: 12px 24px 32px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      background: rgba(0,0,0,0.25);
-    }
-
-    .story-hint {
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 0.3px;
-    }
-
-    .story-close-btn {
-      padding: 10px 32px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 24px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* モバイル */
-    @media (max-width: 420px) {
-      .page { padding: 14px 10px; }
-      .card { padding: 16px 14px; }
-      .stats { gap: 7px; }
-      .stat-value { font-size: 17px; }
-      .filter-tabs { flex-wrap: wrap; gap: 5px; }
-      .achieve-pct-num { font-size: 44px; }
-      .achieve-flow { padding: 10px 8px; }
-      .achieve-flow-val { font-size: 13px; }
-      .achieve-sub-val { font-size: 14px; }
-      .progress-label { min-width: 46px; font-size: 11px; }
-      .progress-pct { min-width: 32px; font-size: 11px; }
-    }
 
     /* 達成率カード */
     .achieve-pct-big { text-align: center; margin-bottom: 16px; }
@@ -836,6 +639,21 @@
     .pace-ahead { color: var(--good); }
     .pace-behind { color: var(--warn); }
 
+    /* モバイル */
+    @media (max-width: 420px) {
+      .page { padding: 14px 10px; }
+      .card { padding: 16px 14px; }
+      .stats { gap: 7px; }
+      .stat-value { font-size: 17px; }
+      .filter-tabs { flex-wrap: wrap; gap: 5px; }
+      .achieve-pct-num { font-size: 44px; }
+      .achieve-flow { padding: 10px 8px; }
+      .achieve-flow-val { font-size: 13px; }
+      .achieve-sub-val { font-size: 14px; }
+      .progress-label { min-width: 46px; font-size: 11px; }
+      .progress-pct { min-width: 32px; font-size: 11px; }
+    }
+
     /* ストーリーオーバーレイ */
     #story-overlay {
       display: none;
@@ -866,7 +684,7 @@
       font-family: 'Outfit', sans-serif;
       font-size: 9px;
       font-weight: 700;
-      color: rgba(255,255,255,0.3);
+      color: var(--story-text);
       letter-spacing: 3px;
       text-transform: uppercase;
       margin-bottom: 4px;
@@ -876,14 +694,14 @@
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 16px;
       font-weight: 800;
-      color: #fff;
+      color: var(--story-fg);
       letter-spacing: 1px;
     }
 
     .story-period {
       font-family: 'Outfit', sans-serif;
       font-size: 10px;
-      color: rgba(255,255,255,0.35);
+      color: var(--story-text);
       margin-top: 3px;
     }
 
@@ -907,7 +725,7 @@
       font-family: 'Outfit', sans-serif;
       font-size: 7px;
       font-weight: 700;
-      color: rgba(255,255,255,0.35);
+      color: var(--story-text);
       letter-spacing: 1.5px;
       text-transform: uppercase;
     }
@@ -915,13 +733,13 @@
       font-family: 'Outfit', sans-serif;
       font-size: 16px;
       font-weight: 800;
-      color: #fff;
+      color: var(--story-fg);
       line-height: 1.2;
     }
     .story-day-unit {
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 9px;
-      color: rgba(255,255,255,0.4);
+      color: var(--story-text);
     }
 
     .story-stats {
@@ -942,7 +760,7 @@
     .story-stat-label {
       font-size: 8px;
       font-weight: 700;
-      color: rgba(255,255,255,0.35);
+      color: var(--story-text);
       letter-spacing: 1px;
       text-transform: uppercase;
       margin-bottom: 3px;
@@ -952,13 +770,13 @@
       font-family: 'Outfit', sans-serif;
       font-size: 15px;
       font-weight: 800;
-      color: #fff;
+      color: var(--story-fg);
       line-height: 1;
     }
 
     .story-stat-unit {
       font-size: 9px;
-      color: rgba(255,255,255,0.35);
+      color: var(--story-text);
       margin-top: 1px;
     }
 
@@ -1009,16 +827,16 @@
 
     .story-hint {
       font-size: 11px;
-      color: rgba(255,255,255,0.3);
+      color: var(--story-text);
       letter-spacing: 0.5px;
     }
 
     .story-close-btn {
       padding: 12px 40px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
+      background: var(--story-pill-bg);
+      border: 1px solid var(--story-pill-border);
       border-radius: 24px;
-      color: rgba(255,255,255,0.8);
+      color: var(--story-fg);
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 13px;
       font-weight: 700;
@@ -1249,7 +1067,7 @@ function renderRecordList() {
     const dateDiv = document.createElement('div');
     dateDiv.className = 'record-date';
     const d = new Date(r.date);
-    dateDiv.textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DAY[d.getDay()]})`;
+    dateDiv.textContent = `${d.getMonth()+1}/${d.getDate()}(${DAY[d.getDay()]})`;
     const weightDiv = document.createElement('div');
     weightDiv.className = 'record-weight';
     weightDiv.textContent = `${r.weight.toFixed(1)} kg`;
@@ -1324,7 +1142,7 @@ function updateGoalDisplay() {
   const fmtDate = s => {
     if (!s) return '';
     const d = new Date(s);
-    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    return `${d.getMonth()+1}/${d.getDate()}`;
   };
 
   const labels = { goal: '目標', start: '開始日', end: '目標日' };
@@ -1690,6 +1508,8 @@ function renderStoryChart() {
   const filtered = getFilteredRecords();
   if (filtered.length === 0) return;
 
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
   const latest = filtered[filtered.length - 1].weight;
   const first = filtered[0].weight;
   const change = latest - first;
@@ -1796,7 +1616,7 @@ function renderStoryChart() {
     backgroundColor: 'rgba(96,165,250,0.18)',
     borderWidth: 3,
     pointBackgroundColor: '#60a5fa',
-    pointBorderColor: '#fff',
+    pointBorderColor: cssVar('--story-bg'),
     pointBorderWidth: 2,
     pointRadius: filtered.length <= 14 ? 5 : 3,
     tension: 0.35,
@@ -1831,19 +1651,19 @@ function renderStoryChart() {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255,255,255,0.07)' },
+          grid: { color: cssVar('--story-line') },
           ticks: {
             font: { size: 11, weight: '600' },
-            color: 'rgba(255,255,255,0.55)',
+            color: cssVar('--story-text'),
             maxTicksLimit: 8,
           },
         },
         y: {
           min: minW, max: maxW,
-          grid: { color: 'rgba(255,255,255,0.07)' },
+          grid: { color: cssVar('--story-line') },
           ticks: {
             font: { size: 11 },
-            color: 'rgba(255,255,255,0.55)',
+            color: cssVar('--story-text'),
             callback: v => v.toFixed(1),
           },
         },
