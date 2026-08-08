@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>体重管理アプリ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4299e1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="体重記録">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+  <style>
+    /* ── テーマ変数 ── */
+    :root, [data-theme="light"] {
+      --story-bg: #0a0a0a;
+      --story-pill-bg: rgba(255,255,255,0.08);
+      --story-pill-border: rgba(255,255,255,0.14);
+      --story-text: rgba(255,255,255,0.35);
+      --story-line: rgba(255,255,255,0.06);
+      --bg: #f4f4f4;
+      --card: #ffffff;
+      --text: #111111;
+      --text2: #777777;
+      --text3: #aaaaaa;
+      --border: #e5e5e5;
+      --input-bg: #f0f0f0;
+      --accent: #111111;
+      --accent-fg: #ffffff;
+      --good: #1a8c4e;
+      --warn: #cc2a2a;
+      --good-bg: rgba(26,140,78,0.08);
+      --warn-bg: rgba(204,42,42,0.08);
+      --muted-bg: #f0f0f0;
+      --muted: #999999;
+      --progress-track: #e5e5e5;
+      --shadow: rgba(0,0,0,0.05);
+    }
+    [data-theme="dark"] {
+      --story-bg: #050505;
+      --story-pill-bg: rgba(255,255,255,0.06);
+      --story-pill-border: rgba(255,255,255,0.1);
+      --story-text: rgba(255,255,255,0.28);
+      --story-line: rgba(255,255,255,0.05);
+      --bg: #0e0e0e;
+      --card: #1c1c1c;
+      --text: #eeeeee;
+      --text2: #888888;
+      --text3: #555555;
+      --border: #2a2a2a;
+      --input-bg: #242424;
+      --accent: #eeeeee;
+      --accent-fg: #111111;
+      --good: #34d399;
+      --warn: #f87171;
+      --good-bg: rgba(52,211,153,0.1);
+      --warn-bg: rgba(248,113,113,0.1);
+      --muted-bg: #262626;
+      --muted: #666666;
+      --progress-track: #2a2a2a;
+      --shadow: rgba(0,0,0,0.4);
+    }
+    [data-theme="sand"] {
+      --story-bg: #140e06;
+      --story-pill-bg: rgba(255,230,180,0.08);
+      --story-pill-border: rgba(255,220,160,0.14);
+      --story-text: rgba(255,220,160,0.35);
+      --story-line: rgba(255,220,160,0.06);
+      --bg: #ede7dd;
+      --card: #f8f4ee;
+      --text: #1c1710;
+      --text2: #8a7868;
+      --text3: #b5a898;
+      --border: #d8d0c4;
+      --input-bg: #e5ddd4;
+      --accent: #1c1710;
+      --accent-fg: #f8f4ee;
+      --good: #2a6e44;
+      --warn: #b03020;
+      --good-bg: rgba(42,110,68,0.08);
+      --warn-bg: rgba(176,48,32,0.08);
+      --muted-bg: #e5ddd4;
+      --muted: #9a8878;
+      --progress-track: #d8d0c4;
+      --shadow: rgba(0,0,0,0.04);
+    }
+    [data-theme="sage"] {
+      --story-bg: #071209;
+      --story-pill-bg: rgba(160,255,180,0.07);
+      --story-pill-border: rgba(140,230,160,0.13);
+      --story-text: rgba(160,230,160,0.35);
+      --story-line: rgba(140,230,160,0.06);
+      --bg: #e8ede5;
+      --card: #f4f8f2;
+      --text: #131e11;
+      --text2: #687866;
+      --text3: #98aa96;
+      --border: #cedacb;
+      --input-bg: #dde8da;
+      --accent: #263d24;
+      --accent-fg: #f4f8f2;
+      --good: #1a7a3a;
+      --warn: #b03020;
+      --good-bg: rgba(26,122,58,0.08);
+      --warn-bg: rgba(176,48,32,0.08);
+      --muted-bg: #d8e4d5;
+      --muted: #789076;
+      --progress-track: #cedacb;
+      --shadow: rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    .stat-value,
+    .record-weight,
+    .achieve-pct-num,
+    .achieve-flow-val,
+    .achieve-sub-val,
+    .progress-pct,
+    .story-stat-value,
+    .story-day-num,
+    input[type="number"],
+    input[type="date"] {
+      font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+    }
+
+    /* ナビゲーション */
+    nav {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: stretch;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 0 var(--border);
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .nav-tabs {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+    }
+
+    nav button {
+      flex: 1;
+      max-width: 180px;
+      padding: 15px 20px;
+      border: none;
+      background: transparent;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text3);
+      cursor: pointer;
+      transition: color 0.15s;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.5px;
+    }
+
+    nav button.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    nav button:hover:not(.active) { color: var(--text2); }
+
+    /* テーマセレクター（入力ページ末尾） */
+    .theme-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .theme-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      padding: 12px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--text3);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .theme-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--muted-bg);
+    }
+    .theme-swatch {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+    }
+    .theme-swatch-light { background: linear-gradient(135deg, #f4f4f4 50%, #111111 50%); }
+    .theme-swatch-dark  { background: #111111; }
+    .theme-swatch-sand  { background: linear-gradient(135deg, #f8f4ee 50%, #c8b89a 50%); }
+    .theme-swatch-sage  { background: linear-gradient(135deg, #f4f8f2 50%, #7aaa78 50%); }
+
+    /* ページ */
+    .page { display: none; padding: 24px 16px; max-width: 600px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* カード */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px 20px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px var(--shadow);
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .card h2 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* フォーム */
+    .form-group { margin-bottom: 14px; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.15s, background 0.15s;
+      outline: none;
+      background: var(--input-bg);
+      color: var(--text);
+    }
+
+    input[type="date"]:focus,
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      background: var(--card);
+    }
+
+    .unit { display: flex; align-items: center; gap: 8px; }
+    .unit input { flex: 1; }
+    .unit span {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text3);
+      min-width: 24px;
+    }
+
+    /* ボタン */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .btn-primary:active { opacity: 0.8; transform: scale(0.99); }
+
+    .btn-danger {
+      background: none;
+      color: var(--warn);
+      border: none;
+      padding: 4px 8px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .btn-danger:hover { background: var(--warn-bg); }
+
+    /* 統計バッジ */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-item {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 13px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-value.good { color: var(--good); }
+    .stat-value.warn { color: var(--warn); }
+
+    /* グラフ */
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin: 8px 0;
+    }
+
+    /* 記録リスト */
+    .record-list {
+      list-style: none;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .record-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .record-item:last-child { border-bottom: none; }
+    .record-date { font-size: 12px; color: var(--text2); }
+    .record-weight { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 2px; }
+
+    .record-diff {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .diff-down { background: var(--good-bg); color: var(--good); }
+    .diff-up   { background: var(--warn-bg); color: var(--warn); }
+    .diff-same { background: var(--muted-bg); color: var(--muted); }
+
+    /* 期間フィルター */
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    /* 空状態 */
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text3);
+    }
+
+    .empty-dash { font-size: 32px; margin-bottom: 10px; color: var(--border); }
+    .empty-text { font-size: 14px; }
+
+    /* トースト */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: var(--card);
+      padding: 11px 22px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform 0.3s;
+      z-index: 999;
+      white-space: nowrap;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* 目標設定エリア */
+    .goal-row { display: flex; align-items: center; gap: 8px; }
+    .goal-row input { flex: 1; }
+
+    #goal-display {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 12px;
+    }
+
+    .goal-badge {
+      display: flex;
+      width: fit-content;
+      align-items: center;
+      gap: 6px;
+      background: var(--muted-bg);
+      color: var(--text2);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ○日後 クイック選択 */
+    .day-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .day-preset-btn {
+      padding: 4px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .day-preset-btn:hover,
+    .day-preset-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .day-custom-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .day-custom-row input {
+      width: 72px;
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text);
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+    }
+    .day-custom-row input:focus { border-color: var(--accent); }
+    .day-custom-row span {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text2);
+    }
+    .day-custom-row button {
+      padding: 6px 14px;
+      border: 1.5px solid var(--accent);
+      border-radius: 8px;
+      background: var(--accent);
+      color: var(--accent-fg);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ストーリー 日数情報 */
+    .story-day-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 6px 0 10px;
+    }
+    .story-day-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      padding: 6px 16px;
+      min-width: 82px;
+    }
+    .story-day-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+    .story-day-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .story-day-unit {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 10px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    /* ストーリーボタン */
+    .btn-story {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      border: 1.5px solid var(--accent);
+      border-radius: 8px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn-story:active { opacity: 0.7; }
+
+    /* ストーリーオーバーレイ */
+    #story-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    #story-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 20px 10px;
+      overflow: hidden;
+    }
+
+    .story-header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .story-app-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .story-title {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 2px;
+    }
+
+    .story-period {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+
+    /* ストーリー統計 */
+    .story-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .story-stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 9px 6px;
+      text-align: center;
+    }
+
+    .story-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .story-stat-value {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .story-stat-unit {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 2px;
+    }
+
+    .story-stat-value.s-good { color: #6ee7b7; }
+    .story-stat-value.s-warn { color: #fca5a5; }
+
+    /* ストーリーグラフ */
+    .story-chart-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 100px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 4px 4px;
+    }
+
+    /* ストーリーゴール表示 */
+    .story-goal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 7px 14px;
+      background: rgba(248,113,113,0.12);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 10px;
+    }
+
+    .story-goal-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fca5a5;
+    }
+
+    /* ストーリーフッター */
+    .story-footer {
+      padding: 12px 24px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0,0,0,0.25);
+    }
+
+    .story-hint {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.3px;
+    }
+
+    .story-close-btn {
+      padding: 10px 32px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 24px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* モバイル */
+    @media (max-width: 420px) {
+      .page { padding: 14px 10px; }
+      .card { padding: 16px 14px; }
+      .stats { gap: 7px; }
+      .stat-value { font-size: 17px; }
+      .filter-tabs { flex-wrap: wrap; gap: 5px; }
+      .achieve-pct-num { font-size: 44px; }
+      .achieve-flow { padding: 10px 8px; }
+      .achieve-flow-val { font-size: 13px; }
+      .achieve-sub-val { font-size: 14px; }
+      .progress-label { min-width: 46px; font-size: 11px; }
+      .progress-pct { min-width: 32px; font-size: 11px; }
+    }
+
+    /* 達成率カード */
+    .achieve-pct-big { text-align: center; margin-bottom: 16px; }
+    .achieve-pct-num {
+      font-size: 54px;
+      font-weight: 800;
+      color: var(--good);
+      line-height: 1;
+    }
+    .achieve-pct-num.warn { color: var(--warn); }
+    .achieve-pct-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+    .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .progress-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+      min-width: 54px;
+      letter-spacing: 0.3px;
+    }
+    .progress-bar-wrap {
+      flex: 1;
+      background: var(--progress-track);
+      border-radius: 20px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .progress-bar { height: 100%; border-radius: 20px; transition: width 0.7s ease; }
+    .progress-pct {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      min-width: 36px;
+      text-align: right;
+    }
+    .achieve-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--muted-bg);
+      border-radius: 10px;
+      padding: 11px 12px;
+      margin: 12px 0 10px;
+      gap: 4px;
+    }
+    .achieve-flow-item { text-align: center; min-width: 0; flex: 1; }
+    .achieve-flow-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+    .achieve-flow-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .achieve-flow-arrow { font-size: 12px; color: var(--border); flex-shrink: 0; }
+    .achieve-sub { display: flex; gap: 8px; }
+    .achieve-sub-item {
+      flex: 1;
+      background: var(--muted-bg);
+      border-radius: 8px;
+      padding: 9px;
+      text-align: center;
+    }
+    .achieve-sub-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text3);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .achieve-sub-val { font-size: 16px; font-weight: 800; color: var(--text); }
+    .achieve-sub-val.good { color: var(--good); }
+    .achieve-sub-val.warn { color: var(--warn); }
+    .achieve-pace {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+    }
+    .pace-ahead { color: var(--good); }
+    .pace-behind { color: var(--warn); }
+
+    /* ストーリーオーバーレイ */
+    #story-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: var(--story-bg);
+      flex-direction: column;
+      align-items: stretch;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    #story-overlay::-webkit-scrollbar { display: none; }
+
+    #story-card {
+      height: 100dvh;
+      min-height: 100dvh;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 18px 10px;
+      overflow: hidden;
+    }
+
+    .story-header { text-align: center; margin-bottom: 8px; }
+
+    .story-app-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .story-title {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .story-period {
+      font-family: 'Outfit', sans-serif;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 3px;
+    }
+
+    .story-day-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 7px 0 8px;
+    }
+    .story-day-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--story-pill-bg);
+      border: 1px solid var(--story-pill-border);
+      border-radius: 8px;
+      padding: 5px 14px;
+      min-width: 72px;
+    }
+    .story-day-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 7px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .story-day-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .story-day-unit {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 9px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .story-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .story-stat {
+      background: var(--story-pill-bg);
+      border: 1px solid var(--story-pill-border);
+      border-radius: 8px;
+      padding: 7px 4px;
+      text-align: center;
+    }
+
+    .story-stat-label {
+      font-size: 8px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .story-stat-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .story-stat-unit {
+      font-size: 9px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 1px;
+    }
+
+    .story-stat-value.s-good { color: #6ee7b7; }
+    .story-stat-value.s-warn { color: #fca5a5; }
+
+    .story-chart-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 120px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--story-line);
+      border: 1px solid var(--story-pill-border);
+      padding: 8px 2px 2px;
+    }
+
+    .story-goal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 5px 12px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 7px;
+    }
+
+    .story-goal-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(248,113,113,0.8);
+      letter-spacing: 0.5px;
+    }
+
+    /* フッター：ビューポート外（スクロールで到達） */
+    .story-footer {
+      background: var(--story-bg);
+      padding: 24px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .story-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .story-close-btn {
+      padding: 12px 40px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 24px;
+      color: rgba(255,255,255,0.8);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ストーリーカード末尾のスクロールヒント */
+    .story-scroll-hint {
+      text-align: center;
+      padding: 6px 0 4px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 9px;
+      color: var(--story-text);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <button class="active" onclick="showPage('input')">入力</button>
+  <button onclick="showPage('graph')">グラフ</button>
+</nav>
+
+<!-- 入力ページ -->
+<div id="page-input" class="page active">
+
+  <div class="card">
+    <h2>体重を記録</h2>
+    <div class="form-group">
+      <label>日付</label>
+      <input type="date" id="input-date">
+    </div>
+    <div class="form-group">
+      <label>体重</label>
+      <div class="unit">
+        <input type="number" id="input-weight" placeholder="0.0" step="0.1" min="20" max="300">
+        <span>kg</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveRecord()">記録する</button>
+  </div>
+
+  <div class="card">
+    <h2>目標設定</h2>
+    <div class="form-group">
+      <label>目標体重</label>
+      <div class="goal-row">
+        <input type="number" id="input-goal" placeholder="0.0" step="0.1" min="20" max="300">
+        <span>kg</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>開始日</label>
+      <input type="date" id="input-start-date">
+    </div>
+    <div class="form-group">
+      <label>目標日</label>
+      <input type="date" id="input-goal-date">
+      <div class="day-custom-row">
+        <input type="number" id="custom-days" placeholder="日数" min="1" max="3650" step="1">
+        <span>日後</span>
+        <button onclick="applyCustomDays()">設定</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveGoal()">目標を設定</button>
+    <div id="goal-display"></div>
+  </div>
+
+  <div class="card">
+    <h2>記録一覧</h2>
+    <ul class="record-list" id="record-list"></ul>
+  </div>
+
+  <div class="card">
+    <h2>テーマ</h2>
+    <div class="theme-selector">
+      <button class="theme-btn active" data-theme="light" onclick="setTheme('light')">
+        <div class="theme-swatch theme-swatch-light"></div>ライト
+      </button>
+      <button class="theme-btn" data-theme="dark" onclick="setTheme('dark')">
+        <div class="theme-swatch theme-swatch-dark"></div>ダーク
+      </button>
+      <button class="theme-btn" data-theme="sand" onclick="setTheme('sand')">
+        <div class="theme-swatch theme-swatch-sand"></div>サンド
+      </button>
+      <button class="theme-btn" data-theme="sage" onclick="setTheme('sage')">
+        <div class="theme-swatch theme-swatch-sage"></div>セージ
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- グラフページ -->
+<div id="page-graph" class="page">
+
+  <div id="achievement-card" class="card" style="display:none">
+    <h2>達成率</h2>
+    <div id="achievement-content"></div>
+  </div>
+
+  <div class="stats" id="stats-area"></div>
+
+  <div class="card">
+    <div class="filter-tabs">
+      <button class="filter-btn active" onclick="setFilter(7, this)">7日</button>
+      <button class="filter-btn" onclick="setFilter(30, this)">30日</button>
+      <button class="filter-btn" onclick="setFilter(90, this)">3ヶ月</button>
+      <button class="filter-btn" onclick="setFilter(0, this)">全期間</button>
+    </div>
+    <div class="chart-container">
+      <canvas id="weight-chart"></canvas>
+    </div>
+    <button class="btn-story" onclick="openStory()">ストーリー用に表示</button>
+  </div>
+
+</div>
+
+<!-- ストーリーオーバーレイ -->
+<div id="story-overlay">
+  <div id="story-card">
+    <div class="story-header">
+      <div class="story-app-name">Weight Tracker</div>
+      <div class="story-title">体重グラフ</div>
+      <div class="story-period" id="story-period"></div>
+    </div>
+    <div class="story-day-row" id="story-day-row"></div>
+    <div class="story-stats" id="story-stats"></div>
+    <div class="story-chart-wrap">
+      <canvas id="story-chart"></canvas>
+    </div>
+    <div id="story-goal-bar"></div>
+    <div class="story-scroll-hint">↓  SCROLL TO CLOSE</div>
+  </div>
+  <div class="story-footer">
+    <div class="story-hint">スクリーンショット → ストーリーにシェア</div>
+    <button class="story-close-btn" onclick="closeStory()">閉じる</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ---- データ管理 ----
+let records = JSON.parse(localStorage.getItem('weight_records') || '[]');
+let goalWeight = parseFloat(localStorage.getItem('weight_goal') || '0');
+let startDate  = localStorage.getItem('weight_start_date') || '';
+let goalDate   = localStorage.getItem('weight_goal_date')  || '';
+let chart = null;
+let filterDays = 7;
+
+function saveData() {
+  localStorage.setItem('weight_records', JSON.stringify(records));
+}
+
+// ---- 入力ページ ----
+function init() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('input-date').value = today;
+  if (goalWeight > 0) document.getElementById('input-goal').value = goalWeight;
+  if (startDate)      document.getElementById('input-start-date').value = startDate;
+  if (goalDate)       document.getElementById('input-goal-date').value  = goalDate;
+  renderRecordList();
+  updateGoalDisplay();
+}
+
+function saveRecord() {
+  const date = document.getElementById('input-date').value;
+  const weight = parseFloat(document.getElementById('input-weight').value);
+
+  if (!date) { showToast('日付を選択してください'); return; }
+  if (!weight || weight < 20 || weight > 300) { showToast('正しい体重を入力してください'); return; }
+
+  // 同じ日付があれば更新
+  const existing = records.findIndex(r => r.date === date);
+  if (existing >= 0) {
+    records[existing].weight = weight;
+    showToast('記録を更新しました');
+  } else {
+    records.push({ date, weight });
+    showToast('記録しました！');
+  }
+
+  records.sort((a, b) => a.date.localeCompare(b.date));
+  saveData();
+  renderRecordList();
+  document.getElementById('input-weight').value = '';
+}
+
+function deleteRecord(date) {
+  records = records.filter(r => r.date !== date);
+  saveData();
+  renderRecordList();
+  if (chart) updateChart();
+  showToast('削除しました');
+}
+
+function renderRecordList() {
+  const list = document.getElementById('record-list');
+  list.innerHTML = '';
+
+  if (records.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    const icon = document.createElement('div');
+    icon.className = 'empty-icon';
+    icon.className = 'empty-dash';
+    icon.textContent = '−';
+    const text = document.createElement('div');
+    text.className = 'empty-text';
+    text.textContent = 'まだ記録がありません';
+    empty.appendChild(icon);
+    empty.appendChild(text);
+    list.appendChild(empty);
+    return;
+  }
+
+  const DAY = ['日','月','火','水','木','金','土'];
+  const sorted = [...records].reverse();
+  sorted.forEach((r, i) => {
+    const prev = sorted[i + 1];
+
+    const li = document.createElement('li');
+    li.className = 'record-item';
+
+    const left = document.createElement('div');
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'record-date';
+    const d = new Date(r.date);
+    dateDiv.textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DAY[d.getDay()]})`;
+    const weightDiv = document.createElement('div');
+    weightDiv.className = 'record-weight';
+    weightDiv.textContent = `${r.weight.toFixed(1)} kg`;
+    left.appendChild(dateDiv);
+    left.appendChild(weightDiv);
+
+    const right = document.createElement('div');
+    right.style.cssText = 'display:flex;align-items:center;gap:8px';
+
+    if (prev) {
+      const diff = r.weight - prev.weight;
+      const sign = diff > 0 ? '+' : '';
+      const cls = diff < 0 ? 'diff-down' : diff > 0 ? 'diff-up' : 'diff-same';
+      const diffSpan = document.createElement('span');
+      diffSpan.className = `record-diff ${cls}`;
+      diffSpan.textContent = `${sign}${diff.toFixed(1)}kg`;
+      right.appendChild(diffSpan);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => deleteRecord(r.date));
+    right.appendChild(delBtn);
+
+    li.appendChild(left);
+    li.appendChild(right);
+    list.appendChild(li);
+  });
+}
+
+function setGoalDaysLater(days, btn) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  document.getElementById('input-goal-date').value = d.toISOString().split('T')[0];
+  document.querySelectorAll('.day-preset-btn').forEach(b => b.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+  document.getElementById('custom-days').value = '';
+}
+
+function applyCustomDays() {
+  const n = parseInt(document.getElementById('custom-days').value);
+  if (!n || n < 1) { showToast('日数を入力してください'); return; }
+  setGoalDaysLater(n, null);
+}
+
+function saveGoal() {
+  const val = parseFloat(document.getElementById('input-goal').value);
+  if (!val || val < 20 || val > 300) { showToast('正しい目標体重を入力してください'); return; }
+
+  const sd = document.getElementById('input-start-date').value;
+  const gd = document.getElementById('input-goal-date').value;
+  if (gd && sd && gd <= sd) { showToast('目標日は開始日より後にしてください'); return; }
+
+  goalWeight = val;
+  localStorage.setItem('weight_goal', goalWeight);
+  startDate = sd;
+  localStorage.setItem('weight_start_date', startDate);
+  goalDate = gd;
+  localStorage.setItem('weight_goal_date', goalDate);
+
+  updateGoalDisplay();
+  if (chart) updateChart();
+  showToast('目標を設定しました！');
+}
+
+function updateGoalDisplay() {
+  const el = document.getElementById('goal-display');
+  el.innerHTML = '';
+  if (!goalWeight) return;
+
+  const fmtDate = s => {
+    if (!s) return '';
+    const d = new Date(s);
+    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+  };
+
+  const labels = { goal: '目標', start: '開始日', end: '目標日' };
+  [
+    goalWeight > 0   ? `${labels.goal}  ${goalWeight.toFixed(1)} kg` : null,
+    startDate ? `${labels.start}  ${fmtDate(startDate)}` : null,
+    goalDate  ? `${labels.end}  ${fmtDate(goalDate)}`   : null,
+  ].filter(Boolean).forEach(txt => {
+    const badge = document.createElement('div');
+    badge.className = 'goal-badge';
+    badge.textContent = txt;
+    el.appendChild(badge);
+  });
+}
+
+// ---- 達成率 ----
+function getStartWeight() {
+  if (records.length === 0) return null;
+  const base = startDate || records[0].date;
+  const onOrAfter = records.filter(r => r.date >= base);
+  return onOrAfter.length > 0 ? onOrAfter[0].weight : records[0].weight;
+}
+
+function buildProgressRow(label, pct, color) {
+  const row = document.createElement('div');
+  row.className = 'progress-row';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'progress-label';
+  lbl.textContent = label;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'progress-bar-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'progress-bar';
+  bar.style.width = Math.min(100, Math.max(0, pct)).toFixed(0) + '%';
+  bar.style.background = color;
+  wrap.appendChild(bar);
+
+  const pctEl = document.createElement('div');
+  pctEl.className = 'progress-pct';
+  pctEl.textContent = Math.min(100, Math.max(0, pct)).toFixed(0) + '%';
+
+  row.appendChild(lbl); row.appendChild(wrap); row.appendChild(pctEl);
+  return row;
+}
+
+function renderAchievementCard() {
+  const card    = document.getElementById('achievement-card');
+  const content = document.getElementById('achievement-content');
+
+  if (!goalWeight || records.length === 0) { card.style.display = 'none'; return; }
+
+  const startW = getStartWeight();
+  if (startW === null) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  content.innerHTML = '';
+
+  const latest     = records[records.length - 1].weight;
+  const totalDelta = goalWeight - startW;
+  const curDelta   = latest - startW;
+  const weightPct  = totalDelta !== 0
+    ? Math.min(100, Math.max(0, (curDelta / totalDelta) * 100))
+    : (latest === goalWeight ? 100 : 0);
+
+  // ── 大きな達成率数字 ──
+  const bigDiv = document.createElement('div');
+  bigDiv.className = 'achieve-pct-big';
+  const numEl = document.createElement('div');
+  numEl.className = 'achieve-pct-num' + (weightPct >= 100 ? '' : weightPct < 30 ? ' warn' : '');
+  numEl.textContent = weightPct.toFixed(0) + '%';
+  const subEl = document.createElement('div');
+  subEl.className = 'achieve-pct-sub';
+  subEl.textContent = weightPct >= 100 ? '🎉 目標達成！' : '体重目標の達成率';
+  bigDiv.appendChild(numEl); bigDiv.appendChild(subEl);
+  content.appendChild(bigDiv);
+
+  // ── プログレスバー ──
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  content.appendChild(buildProgressRow('体重進捗', weightPct, cssVar('--good')));
+
+  // 期間進捗（目標日があるとき）
+  let timePct = null; let daysLeft = null;
+  const today = new Date().toISOString().split('T')[0];
+  const effectiveStart = startDate || (records.length > 0 ? records[0].date : today);
+
+  if (goalDate) {
+    const ms   = d => new Date(d).getTime();
+    const total = ms(goalDate) - ms(effectiveStart);
+    const elapsed = ms(today)  - ms(effectiveStart);
+    daysLeft = Math.round((ms(goalDate) - ms(today)) / 86400000);
+    timePct  = total > 0 ? Math.min(100, Math.max(0, elapsed / total * 100)) : 100;
+    content.appendChild(buildProgressRow('期間進捗', timePct, cssVar('--accent')));
+  }
+
+  // ── 体重の流れ ──
+  const flow = document.createElement('div');
+  flow.className = 'achieve-flow';
+
+  const makeFlowItem = (lbl, val) => {
+    const el = document.createElement('div');
+    el.className = 'achieve-flow-item';
+    const l = document.createElement('div'); l.className = 'achieve-flow-lbl'; l.textContent = lbl;
+    const v = document.createElement('div'); v.className = 'achieve-flow-val'; v.textContent = val;
+    el.appendChild(l); el.appendChild(v);
+    return el;
+  };
+  const arrow = () => { const a = document.createElement('div'); a.className = 'achieve-flow-arrow'; a.textContent = '→'; return a; };
+
+  flow.appendChild(makeFlowItem('開始', startW.toFixed(1) + 'kg'));
+  flow.appendChild(arrow());
+  flow.appendChild(makeFlowItem('現在', latest.toFixed(1) + 'kg'));
+  flow.appendChild(arrow());
+  flow.appendChild(makeFlowItem('目標', goalWeight.toFixed(1) + 'kg'));
+  content.appendChild(flow);
+
+  // ── サブ情報 ──
+  const sub = document.createElement('div');
+  sub.className = 'achieve-sub';
+
+  const remaining = goalWeight - latest;
+  const remSign   = remaining > 0 ? '+' : '';
+  const remClass  = Math.abs(remaining) < 0.05 ? '' : (remaining * totalDelta >= 0 ? 'warn' : 'good');
+
+  const makeSubItem = (lbl, val, cls) => {
+    const el = document.createElement('div'); el.className = 'achieve-sub-item';
+    const l  = document.createElement('div'); l.className = 'achieve-sub-lbl';       l.textContent = lbl;
+    const v  = document.createElement('div'); v.className = 'achieve-sub-val' + (cls ? ` ${cls}` : ''); v.textContent = val;
+    el.appendChild(l); el.appendChild(v);
+    return el;
+  };
+
+  sub.appendChild(makeSubItem('残り体重', `${remSign}${remaining.toFixed(1)}kg`, remClass));
+
+  if (daysLeft !== null) {
+    const dClass = daysLeft < 0 ? 'warn' : daysLeft <= 7 ? 'warn' : '';
+    const dText  = daysLeft < 0 ? `${Math.abs(daysLeft)}日超過` : `あと${daysLeft}日`;
+    sub.appendChild(makeSubItem('目標まで', dText, dClass));
+  }
+
+  content.appendChild(sub);
+
+  // ── ペース判定 ──
+  if (timePct !== null && weightPct > 0) {
+    const pace = document.createElement('div');
+    pace.className = 'achieve-pace';
+    const diff = weightPct - timePct;
+    if (diff >= 5) {
+      pace.classList.add('pace-ahead');
+      pace.textContent = `ペース良好  期間比 +${diff.toFixed(0)}% 先行中`;
+    } else if (diff <= -5) {
+      pace.classList.add('pace-behind');
+      pace.textContent = `ペース遅れ  ${Math.abs(diff).toFixed(0)}% 遅延`;
+    } else {
+      pace.textContent = '目標ペース通りに進行中';
+    }
+    content.appendChild(pace);
+  }
+}
+
+// ---- グラフページ ----
+function setFilter(days, btn) {
+  filterDays = days;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateChart();
+}
+
+function getFilteredRecords() {
+  if (filterDays === 0 || records.length === 0) return records;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - filterDays);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  const filtered = records.filter(r => r.date >= cutoffStr);
+  return filtered.length > 0 ? filtered : records.slice(-Math.min(records.length, filterDays));
+}
+
+function updateStats(filtered) {
+  const area = document.getElementById('stats-area');
+  if (filtered.length === 0) { area.innerHTML = ''; return; }
+
+  const latest = filtered[filtered.length - 1].weight;
+  const first = filtered[0].weight;
+  const change = latest - first;
+  const changeSign = change > 0 ? '+' : '';
+  const changeClass = change < 0 ? 'good' : change > 0 ? 'warn' : '';
+
+  let goalDiffHtml = '---';
+  let goalClass = '';
+  if (goalWeight > 0) {
+    const diff = latest - goalWeight;
+    const diffSign = diff > 0 ? '+' : '';
+    goalClass = diff <= 0 ? 'good' : 'warn';
+    goalDiffHtml = `${diffSign}${diff.toFixed(1)}`;
+  }
+
+  area.innerHTML = `
+    <div class="stat-item">
+      <div class="stat-label">現在</div>
+      <div class="stat-value">${latest.toFixed(1)}<small style="font-size:12px">kg</small></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">増減</div>
+      <div class="stat-value ${changeClass}">${changeSign}${change.toFixed(1)}<small style="font-size:12px">kg</small></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">目標差</div>
+      <div class="stat-value ${goalClass}">${goalDiffHtml}<small style="font-size:12px">${goalWeight > 0 ? 'kg' : ''}</small></div>
+    </div>
+  `;
+}
+
+function updateChart() {
+  const filtered = getFilteredRecords();
+  renderAchievementCard();
+  updateStats(filtered);
+
+  const labels = filtered.map(r => {
+    const d = new Date(r.date);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+  const data = filtered.map(r => r.weight);
+
+  const allWeights = [...data];
+  if (goalWeight > 0) allWeights.push(goalWeight);
+  const minW = Math.min(...allWeights) - 1;
+  const maxW = Math.max(...allWeights) + 1;
+
+  const goalData = filtered.map(() => goalWeight > 0 ? goalWeight : null);
+
+  const datasets = [
+    {
+      label: '体重 (kg)',
+      data: data,
+      borderColor: '#4299e1',
+      backgroundColor: 'rgba(66,153,225,0.12)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#4299e1',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      tension: 0.3,
+      fill: true,
+    }
+  ];
+
+  if (goalWeight > 0) {
+    datasets.push({
+      label: `目標 ${goalWeight.toFixed(1)}kg`,
+      data: goalData,
+      borderColor: '#fc8181',
+      borderWidth: 2,
+      borderDash: [8, 5],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      fill: false,
+      tension: 0,
+    });
+  }
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+    chart.options.scales.y.min = minW;
+    chart.options.scales.y.max = maxW;
+    chart.update();
+    return;
+  }
+
+  const ctx = document.getElementById('weight-chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            font: { size: 12, weight: '600' },
+            generateLabels(chart) {
+              return chart.data.datasets.map((ds, i) => ({
+                text: ds.label,
+                fillStyle: ds.borderColor,
+                strokeStyle: ds.borderColor,
+                lineWidth: 2,
+                lineDash: ds.borderDash || [],
+                hidden: false,
+                datasetIndex: i,
+                pointStyle: i === 0 ? 'circle' : 'line',
+              }));
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              if (ctx.dataset.label.startsWith('目標')) return `目標  ${ctx.parsed.y.toFixed(1)} kg`;
+              return `⚖️ 体重: ${ctx.parsed.y.toFixed(1)} kg`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 11 }, color: '#718096' }
+        },
+        y: {
+          min: minW,
+          max: maxW,
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: {
+            font: { size: 11 },
+            color: '#718096',
+            callback: v => v.toFixed(1) + ' kg'
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'goalLabel',
+      afterDraw(chart) {
+        if (!goalWeight) return;
+        const { ctx, scales: { y, x } } = chart;
+        const yPos = y.getPixelForValue(goalWeight);
+        const xEnd = x.right;
+
+        ctx.save();
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#fc8181';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(`${goalWeight.toFixed(1)}kg`, xEnd, yPos - 4);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ---- ストーリー ----
+let storyChart = null;
+
+function openStory() {
+  if (records.length === 0) { showToast('記録がありません'); return; }
+  const overlay = document.getElementById('story-overlay');
+  overlay.style.display = 'flex';
+  renderStoryChart();
+}
+
+function closeStory() {
+  document.getElementById('story-overlay').style.display = 'none';
+  if (storyChart) { storyChart.destroy(); storyChart = null; }
+}
+
+function renderStoryChart() {
+  const filtered = getFilteredRecords();
+  if (filtered.length === 0) return;
+
+  const latest = filtered[filtered.length - 1].weight;
+  const first = filtered[0].weight;
+  const change = latest - first;
+  const changeSign = change > 0 ? '+' : '';
+
+  // 期間ラベル
+  const fmt = d => {
+    const o = new Date(d);
+    return `${o.getMonth()+1}/${o.getDate()}`;
+  };
+  const periodEl = document.getElementById('story-period');
+  periodEl.textContent = filtered.length > 1
+    ? `${fmt(filtered[0].date)} 〜 ${fmt(filtered[filtered.length-1].date)}`
+    : fmt(filtered[0].date);
+
+  // 何日目 / あと何日
+  const dayRowEl = document.getElementById('story-day-row');
+  dayRowEl.replaceChildren();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const ms = s => new Date(s).getTime();
+  const effectiveStart = startDate || (records.length > 0 ? records[0].date : todayStr);
+
+  const makePill = (label, num, unit) => {
+    const pill = document.createElement('div');
+    pill.className = 'story-day-pill';
+    const lbl = document.createElement('div'); lbl.className = 'story-day-label'; lbl.textContent = label;
+    const n   = document.createElement('div'); n.className   = 'story-day-num';   n.textContent = num;
+    const u   = document.createElement('div'); u.className   = 'story-day-unit';  u.textContent = unit;
+    pill.appendChild(lbl); pill.appendChild(n); pill.appendChild(u);
+    dayRowEl.appendChild(pill);
+  };
+
+  const daysSinceStart = Math.max(1, Math.round((ms(todayStr) - ms(effectiveStart)) / 86400000) + 1);
+  makePill('JOURNEY', daysSinceStart, '日目');
+
+  if (goalDate) {
+    const daysLeft = Math.round((ms(goalDate) - ms(todayStr)) / 86400000);
+    if (daysLeft >= 0) {
+      makePill('GOAL', daysLeft, '日後');
+    } else {
+      makePill('GOAL', Math.abs(daysLeft), '日超過');
+    }
+  }
+
+  // 統計
+  const statsEl = document.getElementById('story-stats');
+  statsEl.innerHTML = '';
+
+  const makeStatEl = (label, value, unit, cls) => {
+    const el = document.createElement('div');
+    el.className = 'story-stat';
+    const lEl = document.createElement('div');
+    lEl.className = 'story-stat-label';
+    lEl.textContent = label;
+    const vEl = document.createElement('div');
+    vEl.className = 'story-stat-value' + (cls ? ` ${cls}` : '');
+    vEl.textContent = value;
+    const uEl = document.createElement('div');
+    uEl.className = 'story-stat-unit';
+    uEl.textContent = unit;
+    el.appendChild(lEl); el.appendChild(vEl); el.appendChild(uEl);
+    statsEl.appendChild(el);
+  };
+
+  makeStatEl('現在', latest.toFixed(1), 'kg', '');
+  const chgClass = change < 0 ? 's-good' : change > 0 ? 's-warn' : '';
+  makeStatEl('増減', `${changeSign}${change.toFixed(1)}`, 'kg', chgClass);
+  if (goalWeight > 0) {
+    const diff = latest - goalWeight;
+    const diffSign = diff > 0 ? '+' : '';
+    const gClass = diff <= 0 ? 's-good' : 's-warn';
+    makeStatEl('目標差', `${diffSign}${diff.toFixed(1)}`, 'kg', gClass);
+  } else {
+    makeStatEl('記録数', filtered.length, '日分', '');
+  }
+
+  // 目標バー
+  const goalBarEl = document.getElementById('story-goal-bar');
+  goalBarEl.innerHTML = '';
+  if (goalWeight > 0) {
+    const bar = document.createElement('div');
+    bar.className = 'story-goal-bar';
+    const lbl = document.createElement('span');
+    lbl.className = 'story-goal-label';
+    lbl.textContent = `目標  ${goalWeight.toFixed(1)} kg`;
+    bar.appendChild(lbl);
+    goalBarEl.appendChild(bar);
+  }
+
+  // グラフ
+  const labels = filtered.map(r => {
+    const d = new Date(r.date);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+  const data = filtered.map(r => r.weight);
+  const allW = [...data];
+  if (goalWeight > 0) allW.push(goalWeight);
+  const minW = Math.min(...allW) - 1;
+  const maxW = Math.max(...allW) + 1;
+
+  const datasets = [{
+    data,
+    borderColor: '#60a5fa',
+    backgroundColor: 'rgba(96,165,250,0.18)',
+    borderWidth: 3,
+    pointBackgroundColor: '#60a5fa',
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    pointRadius: filtered.length <= 14 ? 5 : 3,
+    tension: 0.35,
+    fill: true,
+  }];
+
+  if (goalWeight > 0) {
+    datasets.push({
+      data: filtered.map(() => goalWeight),
+      borderColor: '#f87171',
+      borderWidth: 2.5,
+      borderDash: [10, 6],
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+    });
+  }
+
+  if (storyChart) { storyChart.destroy(); storyChart = null; }
+
+  const ctx = document.getElementById('story-chart').getContext('2d');
+  storyChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          ticks: {
+            font: { size: 11, weight: '600' },
+            color: 'rgba(255,255,255,0.55)',
+            maxTicksLimit: 8,
+          },
+        },
+        y: {
+          min: minW, max: maxW,
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          ticks: {
+            font: { size: 11 },
+            color: 'rgba(255,255,255,0.55)',
+            callback: v => v.toFixed(1),
+          },
+        },
+      },
+    },
+    plugins: [{
+      id: 'storyGoalLabel',
+      afterDraw(ch) {
+        if (!goalWeight) return;
+        const { ctx: c, scales: { y, x } } = ch;
+        const yPos = y.getPixelForValue(goalWeight);
+        c.save();
+        c.font = 'bold 13px sans-serif';
+        c.fillStyle = '#f87171';
+        c.textAlign = 'right';
+        c.textBaseline = 'bottom';
+        c.fillText(`${goalWeight.toFixed(1)}kg`, x.right, yPos - 4);
+        c.restore();
+      },
+    }],
+  });
+}
+
+// ---- ページ切替 ----
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'graph') updateChart();
+}
+
+// ---- トースト ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---- テーマ ----
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.theme === theme);
+  });
+  if (chart) { updateChart(); }
+}
+(function() {
+  const t = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  document.addEventListener('DOMContentLoaded', () => setTheme(t));
+})();
+
+// ---- Service Worker 登録 ----
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js');
+  });
+}
+
+// 初期化
+init();
+</script>
+</body>
+</html>
