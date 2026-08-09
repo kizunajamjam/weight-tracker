@@ -17,6 +17,11 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+
+  <!-- Firebase（Googleログイン + Firestore保存） -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js" integrity="sha384-mLD+wdwynYnAhgHAkdPP5hroWJXJTNy5C2OhPKM55zuiV2vjzFD1LtBohaHq2Ex8" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js" integrity="sha384-NiuRnBs5Z0OgJ12kYJLSeWxANeJN369zH3+Zn0TGVPaCH/TKmbPFqfOmmLtrj+wg" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js" integrity="sha384-/SBCyt0JELVRyyrOp+QG5CdnpVoAry+uw9hdherLgyZxxePtHjOvQmJU5CHymUhT" crossorigin="anonymous"></script>
   <style>
     /* ── テーマ変数 ── */
     :root, [data-theme="light"] {
@@ -228,7 +233,7 @@
     .theme-swatch-sage  { background: linear-gradient(135deg, #f4f8f2 50%, #7aaa78 50%); }
 
     /* ページ */
-    .page { display: none; padding: 24px 16px; max-width: 600px; margin: 0 auto; }
+    .page { display: none; padding: 24px 16px; max-width: 440px; margin: 0 auto; }
     .page.active { display: block; }
 
     /* カード */
@@ -249,6 +254,41 @@
       color: var(--text3);
       letter-spacing: 1.5px;
       text-transform: uppercase;
+    }
+
+    /* アカウント */
+    .account-hint {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .account-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .account-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--muted-bg);
+      flex-shrink: 0;
+    }
+    .account-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .account-sync-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--good);
     }
 
     /* フォーム */
@@ -284,6 +324,21 @@
       border-color: var(--accent);
       background: var(--card);
     }
+
+    .date-field { position: relative; }
+    .date-field input[type="date"] { color: transparent; }
+    .date-field input[type="date"]::-webkit-datetime-edit { color: transparent; }
+    .date-field .date-display {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+      font-size: 16px;
+      color: var(--text);
+    }
+    .date-field .date-display.placeholder { color: var(--text3); }
 
     .unit { display: flex; align-items: center; gap: 8px; }
     .unit input { flex: 1; }
@@ -871,10 +926,27 @@
 <div id="page-input" class="page active">
 
   <div class="card">
+    <h2>アカウント</h2>
+    <div id="account-signed-out">
+      <button class="btn btn-primary" id="google-signin-btn">Googleでログイン</button>
+      <div class="account-hint">ログインすると記録がクラウドに保存され、他の端末でも同じデータを見られます。</div>
+    </div>
+    <div id="account-signed-in" class="account-row" style="display:none">
+      <img class="account-avatar" id="account-photo" alt="">
+      <div class="account-name" id="account-name"></div>
+      <span class="account-sync-badge" id="account-sync-badge">同期済み</span>
+      <button class="btn-danger" id="google-signout-btn">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>体重を記録</h2>
     <div class="form-group">
       <label>日付</label>
-      <input type="date" id="input-date">
+      <div class="date-field">
+        <input type="date" id="input-date">
+        <span class="date-display"></span>
+      </div>
     </div>
     <div class="form-group">
       <label>体重</label>
@@ -897,11 +969,17 @@
     </div>
     <div class="form-group">
       <label>開始日</label>
-      <input type="date" id="input-start-date">
+      <div class="date-field">
+        <input type="date" id="input-start-date">
+        <span class="date-display"></span>
+      </div>
     </div>
     <div class="form-group">
       <label>目標日</label>
-      <input type="date" id="input-goal-date">
+      <div class="date-field">
+        <input type="date" id="input-goal-date">
+        <span class="date-display"></span>
+      </div>
       <div class="day-custom-row">
         <input type="number" id="custom-days" placeholder="日数" min="1" max="3650" step="1">
         <span>日後</span>
@@ -995,9 +1073,129 @@ let goalDate   = localStorage.getItem('weight_goal_date')  || '';
 let chart = null;
 let filterDays = 7;
 
-function saveData() {
+function saveLocal() {
   localStorage.setItem('weight_records', JSON.stringify(records));
+  localStorage.setItem('weight_goal', goalWeight);
+  localStorage.setItem('weight_start_date', startDate);
+  localStorage.setItem('weight_goal_date', goalDate);
 }
+
+function saveData() {
+  saveLocal();
+  syncToCloud();
+}
+
+// ---- Firebase（Googleログイン + Firestore同期） ----
+// Firebaseコンソールで作成したプロジェクトの設定値に置き換えてください
+const firebaseConfig = {
+  apiKey: "AIzaSyBX2zZepaCcQdJOxW4w8OVX1PVv3ggu9M8",
+  authDomain: "weight-tracker-c6f23.firebaseapp.com",
+  projectId: "weight-tracker-c6f23",
+  storageBucket: "weight-tracker-c6f23.firebasestorage.app",
+  messagingSenderId: "464039176032",
+  appId: "1:464039176032:web:baf4f1f3e92a769d9c6005"
+};
+
+let currentUser = null;
+let auth = null;
+let db = null;
+let firebaseReady = false;
+
+try {
+  if (firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    firebaseReady = true;
+  }
+} catch (e) {
+  console.error('Firebase init failed', e);
+}
+
+function refreshAllUI() {
+  renderRecordList();
+  updateGoalDisplay();
+  const dateEl = document.getElementById('input-date');
+  if (dateEl) syncDateDisplay('input-date');
+  document.getElementById('input-goal').value = goalWeight > 0 ? goalWeight : '';
+  document.getElementById('input-start-date').value = startDate;
+  document.getElementById('input-goal-date').value = goalDate;
+  syncDateDisplay('input-start-date');
+  syncDateDisplay('input-goal-date');
+  if (document.getElementById('page-graph').classList.contains('active')) updateChart();
+}
+
+async function syncToCloud() {
+  if (!currentUser || !db) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set({ records, goalWeight, startDate, goalDate });
+  } catch (e) {
+    console.error('cloud sync failed', e);
+    showToast('クラウド同期に失敗しました');
+  }
+}
+
+if (firebaseReady) {
+  document.getElementById('google-signin-btn').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => {
+      console.error('signInWithPopup failed', err.code, err.message);
+      showToast('ログインに失敗しました: ' + err.code);
+    });
+  });
+  document.getElementById('google-signout-btn').addEventListener('click', () => auth.signOut());
+
+  auth.onAuthStateChanged(async user => {
+    currentUser = user;
+    document.getElementById('account-signed-out').style.display = user ? 'none' : 'block';
+    document.getElementById('account-signed-in').style.display = user ? 'flex' : 'none';
+    if (!user) return;
+
+    document.getElementById('account-name').textContent = user.displayName || user.email || '';
+    document.getElementById('account-photo').src = user.photoURL || '';
+
+    try {
+      const snap = await db.collection('users').doc(user.uid).get();
+      if (snap.exists) {
+        const data = snap.data();
+        records = data.records || [];
+        goalWeight = data.goalWeight || 0;
+        startDate = data.startDate || '';
+        goalDate = data.goalDate || '';
+        saveLocal();
+      } else {
+        await syncToCloud();
+      }
+      refreshAllUI();
+      showToast('ログインしました');
+    } catch (e) {
+      console.error('cloud load failed', e);
+      showToast('クラウドからの読み込みに失敗しました');
+    }
+  });
+} else {
+  const outEl = document.getElementById('account-signed-out');
+  if (outEl) outEl.innerHTML = '<div class="account-hint">クラウド連携は未設定です（開発者向け: firebaseConfigを設定してください）</div>';
+}
+
+// ---- 日付表示（ブラウザのロケールに関係なく常に年/月/日で表示） ----
+function formatDateJP(value) {
+  if (!value) return '';
+  const [y, m, d] = value.split('-').map(Number);
+  return `${y}/${m}/${d}`;
+}
+
+function syncDateDisplay(id) {
+  const input = document.getElementById(id);
+  const display = input.nextElementSibling;
+  const text = formatDateJP(input.value);
+  display.textContent = text || '年/月/日';
+  display.classList.toggle('placeholder', !text);
+}
+
+['input-date', 'input-start-date', 'input-goal-date'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => syncDateDisplay(id));
+});
 
 // ---- 入力ページ ----
 function init() {
@@ -1006,6 +1204,7 @@ function init() {
   if (goalWeight > 0) document.getElementById('input-goal').value = goalWeight;
   if (startDate)      document.getElementById('input-start-date').value = startDate;
   if (goalDate)       document.getElementById('input-goal-date').value  = goalDate;
+  ['input-date', 'input-start-date', 'input-goal-date'].forEach(syncDateDisplay);
   renderRecordList();
   updateGoalDisplay();
 }
@@ -1109,6 +1308,7 @@ function setGoalDaysLater(days, btn) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   document.getElementById('input-goal-date').value = d.toISOString().split('T')[0];
+  syncDateDisplay('input-goal-date');
   document.querySelectorAll('.day-preset-btn').forEach(b => b.classList.remove('selected'));
   if (btn) btn.classList.add('selected');
   document.getElementById('custom-days').value = '';
@@ -1129,11 +1329,9 @@ function saveGoal() {
   if (gd && sd && gd <= sd) { showToast('目標日は開始日より後にしてください'); return; }
 
   goalWeight = val;
-  localStorage.setItem('weight_goal', goalWeight);
   startDate = sd;
-  localStorage.setItem('weight_start_date', startDate);
   goalDate = gd;
-  localStorage.setItem('weight_goal_date', goalDate);
+  saveData();
 
   updateGoalDisplay();
   if (chart) updateChart();
