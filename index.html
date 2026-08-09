@@ -1146,27 +1146,16 @@ async function syncToCloud() {
   }
 }
 
-function isStandalonePWA() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-
 if (firebaseReady) {
   document.getElementById('google-signin-btn').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // ホーム画面追加のPWA(standalone)はリダイレクトだと結果を受け取れないためポップアップ、
-    // 通常のブラウザタブはポップアップブロックを避けるためリダイレクトを使う
-    const signIn = isStandalonePWA() ? auth.signInWithPopup(provider) : auth.signInWithRedirect(provider);
-    signIn.catch(err => {
+    // ポップアップ方式に統一（リダイレクト方式はstandalone PWAで無言で失敗することがあるため不採用）
+    auth.signInWithPopup(provider).catch(err => {
       console.error('signIn failed', err.code, err.message);
       showToast('ログインに失敗しました: ' + err.code);
     });
   });
   document.getElementById('google-signout-btn').addEventListener('click', () => auth.signOut());
-
-  auth.getRedirectResult().catch(err => {
-    console.error('getRedirectResult failed', err.code, err.message);
-    showToast('ログインに失敗しました: ' + err.code);
-  });
 
   let unsubscribeCloud = null;
 
