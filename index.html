@@ -1083,6 +1083,10 @@ function localDateString(d) {
 function todayLocal() {
   return localDateString(new Date());
 }
+function parseLocalDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 
 function saveLocal() {
   localStorage.setItem('weight_records', JSON.stringify(records));
@@ -1322,7 +1326,8 @@ function renderRecordList() {
 }
 
 function setGoalDaysLater(days, btn) {
-  const d = new Date();
+  const sd = document.getElementById('input-start-date').value;
+  const d = sd ? parseLocalDate(sd) : new Date();
   d.setDate(d.getDate() + days);
   document.getElementById('input-goal-date').value = localDateString(d);
   syncDateDisplay('input-goal-date');
