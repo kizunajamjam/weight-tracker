@@ -1138,24 +1138,32 @@ async function syncToCloud() {
 if (firebaseReady) {
   document.getElementById('google-signin-btn').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(err => {
-      console.error('signInWithPopup failed', err.code, err.message);
-      showToast('ログインに失敗しました: ' + err.code);
-    });
+    // モバイル（特にホーム画面追加のPWA）はポップアップが不安定なためリダイレクト方式に統一
+    auth.signInWithRedirect(provider);
   });
   document.getElementById('google-signout-btn').addEventListener('click', () => auth.signOut());
 
-  auth.onAuthStateChanged(async user => {
+  auth.getRedirectResult().catch(err => {
+    console.error('getRedirectResult failed', err.code, err.message);
+    showToast('ログインに失敗しました: ' + err.code);
+  });
+
+  let unsubscribeCloud = null;
+
+  auth.onAuthStateChanged(user => {
     currentUser = user;
     document.getElementById('account-signed-out').style.display = user ? 'none' : 'block';
     document.getElementById('account-signed-in').style.display = user ? 'flex' : 'none';
+
+    if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; }
     if (!user) return;
 
     document.getElementById('account-name').textContent = user.displayName || user.email || '';
     document.getElementById('account-photo').src = user.photoURL || '';
 
-    try {
-      const snap = await db.collection('users').doc(user.uid).get();
+    // 一度きりの読み込みではなく常時リッスンし、他端末での変更もリアルタイムで反映する
+    let firstSnapshot = true;
+    unsubscribeCloud = db.collection('users').doc(user.uid).onSnapshot(async snap => {
       if (snap.exists) {
         const data = snap.data();
         records = data.records || [];
@@ -1163,15 +1171,15 @@ if (firebaseReady) {
         startDate = data.startDate || '';
         goalDate = data.goalDate || '';
         saveLocal();
-      } else {
+        refreshAllUI();
+      } else if (firstSnapshot) {
         await syncToCloud();
       }
-      refreshAllUI();
-      showToast('ログインしました');
-    } catch (e) {
-      console.error('cloud load failed', e);
-      showToast('クラウドからの読み込みに失敗しました');
-    }
+      if (firstSnapshot) { showToast('ログインしました'); firstSnapshot = false; }
+    }, err => {
+      console.error('cloud sync listener failed', err.code, err.message);
+      showToast('クラウド同期に失敗しました');
+    });
   });
 } else {
   const outEl = document.getElementById('account-signed-out');
