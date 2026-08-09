@@ -1139,7 +1139,10 @@ if (firebaseReady) {
   document.getElementById('google-signin-btn').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     // モバイル（特にホーム画面追加のPWA）はポップアップが不安定なためリダイレクト方式に統一
-    auth.signInWithRedirect(provider);
+    auth.signInWithRedirect(provider).catch(err => {
+      console.error('signInWithRedirect failed', err.code, err.message);
+      showToast('ログインに失敗しました: ' + err.code);
+    });
   });
   document.getElementById('google-signout-btn').addEventListener('click', () => auth.signOut());
 
@@ -1491,8 +1494,8 @@ function renderAchievementCard() {
   sub.appendChild(makeSubItem('残り体重', `${remSign}${remaining.toFixed(1)}kg`, remClass));
 
   if (daysLeft !== null) {
-    const dClass = daysLeft < 0 ? 'warn' : daysLeft <= 7 ? 'warn' : '';
-    const dText  = daysLeft < 0 ? `${Math.abs(daysLeft)}日超過` : `あと${daysLeft}日`;
+    const dClass = daysLeft <= 7 ? 'warn' : '';
+    const dText  = daysLeft < 0 ? `${Math.abs(daysLeft)}日超過` : daysLeft === 0 ? '本日が期限' : `あと${daysLeft}日`;
     sub.appendChild(makeSubItem('目標まで', dText, dClass));
   }
 
@@ -1759,7 +1762,9 @@ function renderStoryChart() {
 
   if (goalDate) {
     const daysLeft = Math.round((ms(goalDate) - ms(todayStr)) / 86400000);
-    if (daysLeft >= 0) {
+    if (daysLeft === 0) {
+      makePill('GOAL', '本日', '期限');
+    } else if (daysLeft > 0) {
       makePill('GOAL', daysLeft, '日後');
     } else {
       makePill('GOAL', Math.abs(daysLeft), '日超過');
