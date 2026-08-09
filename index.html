@@ -1073,6 +1073,17 @@ let goalDate   = localStorage.getItem('weight_goal_date')  || '';
 let chart = null;
 let filterDays = 7;
 
+// ローカルタイムゾーン基準のyyyy-mm-dd（toISOStringはUTC基準になり、JSTの深夜〜朝は前日扱いになるため使わない）
+function localDateString(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function todayLocal() {
+  return localDateString(new Date());
+}
+
 function saveLocal() {
   localStorage.setItem('weight_records', JSON.stringify(records));
   localStorage.setItem('weight_goal', goalWeight);
@@ -1135,12 +1146,18 @@ async function syncToCloud() {
   }
 }
 
+function isStandalonePWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 if (firebaseReady) {
   document.getElementById('google-signin-btn').addEventListener('click', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // モバイル（特にホーム画面追加のPWA）はポップアップが不安定なためリダイレクト方式に統一
-    auth.signInWithRedirect(provider).catch(err => {
-      console.error('signInWithRedirect failed', err.code, err.message);
+    // ホーム画面追加のPWA(standalone)はリダイレクトだと結果を受け取れないためポップアップ、
+    // 通常のブラウザタブはポップアップブロックを避けるためリダイレクトを使う
+    const signIn = isStandalonePWA() ? auth.signInWithPopup(provider) : auth.signInWithRedirect(provider);
+    signIn.catch(err => {
+      console.error('signIn failed', err.code, err.message);
       showToast('ログインに失敗しました: ' + err.code);
     });
   });
@@ -1210,7 +1227,7 @@ function syncDateDisplay(id) {
 
 // ---- 入力ページ ----
 function init() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayLocal();
   document.getElementById('input-date').value = today;
   if (goalWeight > 0) document.getElementById('input-goal').value = goalWeight;
   if (startDate)      document.getElementById('input-start-date').value = startDate;
@@ -1318,7 +1335,7 @@ function renderRecordList() {
 function setGoalDaysLater(days, btn) {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  document.getElementById('input-goal-date').value = d.toISOString().split('T')[0];
+  document.getElementById('input-goal-date').value = localDateString(d);
   syncDateDisplay('input-goal-date');
   document.querySelectorAll('.day-preset-btn').forEach(b => b.classList.remove('selected'));
   if (btn) btn.classList.add('selected');
@@ -1442,7 +1459,7 @@ function renderAchievementCard() {
 
   // 期間進捗（目標日があるとき）
   let timePct = null; let daysLeft = null;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayLocal();
   const effectiveStart = startDate || (records.length > 0 ? records[0].date : today);
 
   if (goalDate) {
@@ -1531,7 +1548,7 @@ function getFilteredRecords() {
   if (filterDays === 0 || records.length === 0) return records;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - filterDays);
-  const cutoffStr = cutoff.toISOString().split('T')[0];
+  const cutoffStr = localDateString(cutoff);
   const filtered = records.filter(r => r.date >= cutoffStr);
   return filtered.length > 0 ? filtered : records.slice(-Math.min(records.length, filterDays));
 }
@@ -1743,7 +1760,7 @@ function renderStoryChart() {
   // 何日目 / あと何日
   const dayRowEl = document.getElementById('story-day-row');
   dayRowEl.replaceChildren();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayLocal();
   const ms = s => new Date(s).getTime();
   const effectiveStart = startDate || (records.length > 0 ? records[0].date : todayStr);
 
