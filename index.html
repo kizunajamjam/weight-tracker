@@ -343,18 +343,27 @@
       background: var(--card);
     }
 
-    .date-field { position: relative; }
-    .date-field input[type="date"] { color: transparent; }
+    .date-field { position: relative; display: inline-block; }
+    .date-field input[type="date"] {
+      color: transparent;
+      width: 132px;
+      min-width: 132px;
+      max-width: 132px;
+    }
     .date-field input[type="date"]::-webkit-datetime-edit { color: transparent; }
     .date-field .date-display {
       position: absolute;
       left: 14px;
+      right: 14px;
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none;
       font-family: 'Outfit', 'Noto Sans JP', sans-serif;
       font-size: 16px;
       color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .date-field .date-display.placeholder { color: var(--text3); }
 
