@@ -443,6 +443,15 @@
     .stat-value.good { color: var(--good); }
     .stat-value.warn { color: var(--warn); }
 
+    .stat-bmi {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+    .stat-bmi.good { color: var(--good); }
+    .stat-bmi.warn { color: var(--warn); }
+
     /* グラフ */
     .chart-container {
       position: relative;
@@ -838,7 +847,9 @@
     .story-day-unit {
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 9px;
+      font-weight: 700;
       color: var(--story-text);
+      margin-left: 2px;
     }
 
     .story-stats {
@@ -875,8 +886,9 @@
 
     .story-stat-unit {
       font-size: 9px;
+      font-weight: 700;
       color: var(--story-text);
-      margin-top: 1px;
+      margin-left: 2px;
     }
 
     .story-stat-value.s-good { color: #6ee7b7; }
@@ -1002,6 +1014,13 @@
   <div class="card">
     <h2>目標設定</h2>
     <div class="form-group">
+      <label>身長</label>
+      <div class="unit">
+        <input type="number" id="input-height" placeholder="0.0" step="0.1" min="100" max="250" onchange="saveHeight()">
+        <span>cm</span>
+      </div>
+    </div>
+    <div class="form-group">
       <label>目標体重</label>
       <div class="goal-row">
         <input type="number" id="input-goal" placeholder="0.0" step="0.1" min="20" max="300">
@@ -1115,6 +1134,7 @@ let records = JSON.parse(localStorage.getItem('weight_records') || '[]');
 let goalWeight = parseFloat(localStorage.getItem('weight_goal') || '0');
 let startDate  = localStorage.getItem('weight_start_date') || '';
 let goalDate   = localStorage.getItem('weight_goal_date')  || '';
+let heightCm   = parseFloat(localStorage.getItem('weight_height') || '0');
 let chart = null;
 let filterDays = 7;
 
@@ -1133,11 +1153,29 @@ function parseLocalDate(s) {
   return new Date(y, m - 1, d);
 }
 
+// 年をまたぐ範囲では月/日だけだと同じラベルが繰り返され紛らわしいので年を付ける
+function chartLabel(dateStr, includeYear) {
+  const d = parseLocalDate(dateStr);
+  return includeYear
+    ? `${String(d.getFullYear()).slice(2)}/${d.getMonth()+1}/${d.getDate()}`
+    : `${d.getMonth()+1}/${d.getDate()}`;
+}
+function spansMultipleYears(recs) {
+  return recs.length > 0 && recs[0].date.slice(0, 4) !== recs[recs.length - 1].date.slice(0, 4);
+}
+
 function saveLocal() {
   localStorage.setItem('weight_records', JSON.stringify(records));
   localStorage.setItem('weight_goal', goalWeight);
   localStorage.setItem('weight_start_date', startDate);
   localStorage.setItem('weight_goal_date', goalDate);
+  localStorage.setItem('weight_height', heightCm);
+}
+
+function calcBMI(weightKg) {
+  if (!heightCm || heightCm <= 0) return null;
+  const h = heightCm / 100;
+  return weightKg / (h * h);
 }
 
 function saveData() {
@@ -1177,6 +1215,7 @@ function refreshAllUI() {
   updateGoalDisplay();
   const dateEl = document.getElementById('input-date');
   if (dateEl) syncDateDisplay('input-date');
+  document.getElementById('input-height').value = heightCm > 0 ? heightCm : '';
   document.getElementById('input-goal').value = goalWeight > 0 ? goalWeight : '';
   document.getElementById('input-start-date').value = startDate;
   document.getElementById('input-goal-date').value = goalDate;
@@ -1188,7 +1227,7 @@ function refreshAllUI() {
 async function syncToCloud() {
   if (!currentUser || !db) return;
   try {
-    await db.collection('users').doc(currentUser.uid).set({ records, goalWeight, startDate, goalDate });
+    await db.collection('users').doc(currentUser.uid).set({ records, goalWeight, startDate, goalDate, heightCm });
   } catch (e) {
     console.error('cloud sync failed', e);
     showToast('クラウド同期に失敗しました');
@@ -1228,6 +1267,7 @@ if (firebaseReady) {
         goalWeight = data.goalWeight || 0;
         startDate = data.startDate || '';
         goalDate = data.goalDate || '';
+        heightCm = data.heightCm || 0;
         saveLocal();
         refreshAllUI();
       } else if (firstSnapshot) {
@@ -1267,12 +1307,21 @@ function syncDateDisplay(id) {
 function init() {
   const today = todayLocal();
   document.getElementById('input-date').value = today;
+  if (heightCm > 0)   document.getElementById('input-height').value = heightCm;
   if (goalWeight > 0) document.getElementById('input-goal').value = goalWeight;
   if (startDate)      document.getElementById('input-start-date').value = startDate;
   if (goalDate)       document.getElementById('input-goal-date').value  = goalDate;
   ['input-date', 'input-start-date', 'input-goal-date'].forEach(syncDateDisplay);
   renderRecordList();
   updateGoalDisplay();
+}
+
+function saveHeight() {
+  const val = parseFloat(document.getElementById('input-height').value);
+  if (!val || val < 100 || val > 250) return;
+  heightCm = val;
+  saveData();
+  if (document.getElementById('page-graph').classList.contains('active')) updateChart();
 }
 
 function saveRecord() {
@@ -1585,6 +1634,14 @@ function setFilter(days, btn) {
 
 function getFilteredRecords() {
   if (filterDays === 0 || records.length === 0) return records;
+  if (filterDays === 7) {
+    // 「今日」ではなく最新の記録日を基準に直近7日分を切り出す
+    const latest = records[records.length - 1].date;
+    const d = parseLocalDate(latest);
+    d.setDate(d.getDate() - 6);
+    const cutoffStr = localDateString(d);
+    return records.filter(r => r.date >= cutoffStr && r.date <= latest);
+  }
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - filterDays);
   const cutoffStr = localDateString(cutoff);
@@ -1611,10 +1668,15 @@ function updateStats(filtered) {
     goalDiffHtml = `${diffSign}${diff.toFixed(1)}`;
   }
 
+  const bmi = calcBMI(latest);
+  const bmiClass = bmi === null ? '' : (bmi >= 18.5 && bmi < 25) ? 'good' : 'warn';
+  const bmiHtml = bmi === null ? '' : `<div class="stat-bmi ${bmiClass}">BMI ${bmi.toFixed(1)}</div>`;
+
   area.innerHTML = `
     <div class="stat-item">
       <div class="stat-label">現在</div>
       <div class="stat-value">${latest.toFixed(1)}<small style="font-size:12px">kg</small></div>
+      ${bmiHtml}
     </div>
     <div class="stat-item">
       <div class="stat-label">増減</div>
@@ -1643,31 +1705,50 @@ function updateChart() {
   emptyEl.classList.remove('show');
   canvasEl.style.visibility = 'visible';
 
-  const labels = filtered.map(r => {
-    const d = new Date(r.date);
-    return `${d.getMonth()+1}/${d.getDate()}`;
-  });
-  const data = filtered.map(r => r.weight);
+  let labels, data;
+  if (filterDays === 7) {
+    // 最新の記録日を右端にした7日分の軸を作り、記録がない日はギャップにする
+    const latest = filtered[filtered.length - 1].date;
+    const byDate = new Map(filtered.map(r => [r.date, r.weight]));
+    const d = parseLocalDate(latest);
+    d.setDate(d.getDate() - 6);
+    labels = []; data = [];
+    for (let i = 0; i < 7; i++) {
+      const ds = localDateString(d);
+      labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+      data.push(byDate.has(ds) ? byDate.get(ds) : null);
+      d.setDate(d.getDate() + 1);
+    }
+  } else {
+    const withYear = spansMultipleYears(filtered);
+    labels = filtered.map(r => chartLabel(r.date, withYear));
+    data = filtered.map(r => r.weight);
+  }
 
-  const allWeights = [...data];
+  const allWeights = data.filter(v => v !== null);
   if (goalWeight > 0) allWeights.push(goalWeight);
   const minW = Math.min(...allWeights) - 1;
   const maxW = Math.max(...allWeights) + 1;
 
-  const goalData = filtered.map(() => goalWeight > 0 ? goalWeight : null);
+  const goalData = labels.map(() => goalWeight > 0 ? goalWeight : null);
+
+  // 最新の記録だけ目立たせ、それ以前は控えめな色・小さめサイズにする
+  const lastIdx = data.length - 1;
+  const pointColors = data.map((_, i) => i === lastIdx ? '#4299e1' : '#94a3b8');
+  const pointRadii  = data.map((_, i) => i === lastIdx ? 5 : 3);
 
   const datasets = [
     {
       label: '体重 (kg)',
       data: data,
-      borderColor: '#4299e1',
-      backgroundColor: 'rgba(66,153,225,0.12)',
-      borderWidth: 2.5,
-      pointBackgroundColor: '#4299e1',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: 5,
+      borderColor: 'rgba(66,153,225,0.45)',
+      backgroundColor: 'rgba(66,153,225,0.08)',
+      borderWidth: 1.5,
+      pointBackgroundColor: pointColors,
+      pointBorderWidth: 0,
+      pointRadius: pointRadii,
       pointHoverRadius: 7,
+      spanGaps: true,
       tension: 0.3,
       fill: true,
     }
@@ -1798,10 +1879,7 @@ function renderStoryChart() {
   const changeSign = change > 0 ? '+' : '';
 
   // 期間ラベル
-  const fmt = d => {
-    const o = new Date(d);
-    return `${o.getMonth()+1}/${o.getDate()}`;
-  };
+  const fmt = d => chartLabel(d, spansMultipleYears(filtered));
   const periodEl = document.getElementById('story-period');
   periodEl.textContent = filtered.length > 1
     ? `${fmt(filtered[0].date)} 〜 ${fmt(filtered[filtered.length-1].date)}`
@@ -1818,9 +1896,11 @@ function renderStoryChart() {
     const pill = document.createElement('div');
     pill.className = 'story-day-pill';
     const lbl = document.createElement('div'); lbl.className = 'story-day-label'; lbl.textContent = label;
-    const n   = document.createElement('div'); n.className   = 'story-day-num';   n.textContent = num;
-    const u   = document.createElement('div'); u.className   = 'story-day-unit';  u.textContent = unit;
-    pill.appendChild(lbl); pill.appendChild(n); pill.appendChild(u);
+    const n   = document.createElement('div'); n.className   = 'story-day-num';
+    n.append(document.createTextNode(num));
+    const u = document.createElement('span'); u.className = 'story-day-unit'; u.textContent = unit;
+    n.appendChild(u);
+    pill.appendChild(lbl); pill.appendChild(n);
     dayRowEl.appendChild(pill);
   };
 
@@ -1850,25 +1930,37 @@ function renderStoryChart() {
     lEl.textContent = label;
     const vEl = document.createElement('div');
     vEl.className = 'story-stat-value' + (cls ? ` ${cls}` : '');
-    vEl.textContent = value;
-    const uEl = document.createElement('div');
-    uEl.className = 'story-stat-unit';
-    uEl.textContent = unit;
-    el.appendChild(lEl); el.appendChild(vEl); el.appendChild(uEl);
+    vEl.append(document.createTextNode(value));
+    if (unit) {
+      const uEl = document.createElement('span');
+      uEl.className = 'story-stat-unit';
+      uEl.textContent = unit;
+      vEl.appendChild(uEl);
+    }
+    el.appendChild(lEl); el.appendChild(vEl);
     statsEl.appendChild(el);
   };
 
-  makeStatEl('現在', latest.toFixed(1), 'kg', '');
+  const statItems = [];
+  statItems.push(['現在', latest.toFixed(1), 'kg', '']);
   const chgClass = change < 0 ? 's-good' : change > 0 ? 's-warn' : '';
-  makeStatEl('増減', `${changeSign}${change.toFixed(1)}`, 'kg', chgClass);
+  statItems.push(['増減', `${changeSign}${change.toFixed(1)}`, 'kg', chgClass]);
   if (goalWeight > 0) {
     const diff = latest - goalWeight;
     const diffSign = diff > 0 ? '+' : '';
     const gClass = diff <= 0 ? 's-good' : 's-warn';
-    makeStatEl('目標差', `${diffSign}${diff.toFixed(1)}`, 'kg', gClass);
-  } else {
-    makeStatEl('記録数', filtered.length, '日分', '');
+    statItems.push(['目標差', `${diffSign}${diff.toFixed(1)}`, 'kg', gClass]);
   }
+  const bmi = calcBMI(latest);
+  if (bmi !== null) {
+    const bmiClass = (bmi >= 18.5 && bmi < 25) ? 's-good' : 's-warn';
+    statItems.push(['BMI', bmi.toFixed(1), '', bmiClass]);
+  }
+  if (statItems.length < 3) {
+    statItems.push(['記録数', filtered.length, '日分', '']);
+  }
+  statsEl.style.gridTemplateColumns = `repeat(${statItems.length}, 1fr)`;
+  statItems.forEach(s => makeStatEl(s[0], s[1], s[2], s[3]));
 
   // 目標バー
   const goalBarEl = document.getElementById('story-goal-bar');
@@ -1884,32 +1976,53 @@ function renderStoryChart() {
   }
 
   // グラフ
-  const labels = filtered.map(r => {
-    const d = new Date(r.date);
-    return `${d.getMonth()+1}/${d.getDate()}`;
-  });
-  const data = filtered.map(r => r.weight);
-  const allW = [...data];
+  let labels, data;
+  if (filterDays === 7) {
+    // 最新の記録日を右端にした7日分の軸を作り、記録がない日はギャップにする
+    const latestDate = filtered[filtered.length - 1].date;
+    const byDate = new Map(filtered.map(r => [r.date, r.weight]));
+    const dd = parseLocalDate(latestDate);
+    dd.setDate(dd.getDate() - 6);
+    labels = []; data = [];
+    for (let i = 0; i < 7; i++) {
+      const ds = localDateString(dd);
+      labels.push(`${dd.getMonth()+1}/${dd.getDate()}`);
+      data.push(byDate.has(ds) ? byDate.get(ds) : null);
+      dd.setDate(dd.getDate() + 1);
+    }
+  } else {
+    const withYear = spansMultipleYears(filtered);
+    labels = filtered.map(r => chartLabel(r.date, withYear));
+    data = filtered.map(r => r.weight);
+  }
+
+  const allW = data.filter(v => v !== null);
   if (goalWeight > 0) allW.push(goalWeight);
   const minW = Math.min(...allW) - 1;
   const maxW = Math.max(...allW) + 1;
 
+  // 最新の記録だけ目立たせ、それ以前は控えめな色・小さめサイズにする
+  const lastIdx = data.length - 1;
+  const baseRadius = filtered.length <= 14 ? 5 : 3;
+  const storyPointColors = data.map((_, i) => i === lastIdx ? '#60a5fa' : '#94a3b8');
+  const storyPointRadii  = data.map((_, i) => i === lastIdx ? baseRadius : Math.max(2, baseRadius - 2));
+
   const datasets = [{
     data,
-    borderColor: '#60a5fa',
-    backgroundColor: 'rgba(96,165,250,0.18)',
-    borderWidth: 3,
-    pointBackgroundColor: '#60a5fa',
-    pointBorderColor: cssVar('--story-bg'),
-    pointBorderWidth: 2,
-    pointRadius: filtered.length <= 14 ? 5 : 3,
+    borderColor: 'rgba(96,165,250,0.45)',
+    backgroundColor: 'rgba(96,165,250,0.1)',
+    borderWidth: 1.8,
+    pointBackgroundColor: storyPointColors,
+    pointBorderWidth: 0,
+    pointRadius: storyPointRadii,
+    spanGaps: true,
     tension: 0.35,
     fill: true,
   }];
 
   if (goalWeight > 0) {
     datasets.push({
-      data: filtered.map(() => goalWeight),
+      data: labels.map(() => goalWeight),
       borderColor: '#f87171',
       borderWidth: 2.5,
       borderDash: [10, 6],
