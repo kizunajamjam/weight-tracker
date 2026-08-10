@@ -274,6 +274,12 @@
       text-transform: uppercase;
     }
 
+    .guide-text {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text2);
+    }
+
     /* アカウント */
     .account-hint {
       font-size: 12px;
@@ -972,6 +978,7 @@
   <nav>
     <button class="active" onclick="showPage('input')">入力</button>
     <button onclick="showPage('graph')">グラフ</button>
+    <button onclick="showPage('guide')">使い方</button>
   </nav>
 </header>
 
@@ -1099,7 +1106,42 @@
         <div class="empty-text">まだ記録がありません</div>
       </div>
     </div>
-    <button class="btn-story" onclick="openStory()">ストーリー用に表示</button>
+    <button class="btn-story" onclick="openStory()">ストーリーズ用に表示</button>
+  </div>
+
+</div>
+
+<!-- 使い方ページ -->
+<div id="page-guide" class="page">
+
+  <div class="card">
+    <h2>体重を記録する</h2>
+    <p class="guide-text">「入力」タブの「日付」と「体重」を入れて「記録する」を押します。同じ日付ですでに記録がある場合は上書き更新されます。</p>
+  </div>
+
+  <div class="card">
+    <h2>目標を設定する</h2>
+    <p class="guide-text">「目標設定」で身長・目標体重・開始日・目標日を入力します。目標日は「日数」欄に数字を入れて「設定」を押すと、開始日（未入力なら今日）からの◯日後を自動で計算できます。</p>
+  </div>
+
+  <div class="card">
+    <h2>グラフを見る</h2>
+    <p class="guide-text">「グラフ」タブでは7日・30日・3ヶ月・全期間の切り替えができます。7日表示は最新の記録日を右端にした7日間の推移です。目標を設定していると達成率や期間の進み具合も表示されます。身長を設定するとBMIも自動で表示されます。</p>
+  </div>
+
+  <div class="card">
+    <h2>ストーリーズで共有する</h2>
+    <p class="guide-text">グラフ画面下部の「ストーリーズ用に表示」を押すと、SNSのストーリーズに合わせた縦長デザインで体重推移を確認できます。スクリーンショットを撮ってそのままシェアできます。</p>
+  </div>
+
+  <div class="card">
+    <h2>他の端末と同期する</h2>
+    <p class="guide-text">「入力」タブ上部の「Googleでログイン」から自分のGoogleアカウントでログインすると、記録がクラウドに保存され、他のスマホ・PCでログインしたときも同じデータを見たり続きを記録したりできます。</p>
+  </div>
+
+  <div class="card">
+    <h2>テーマを変える</h2>
+    <p class="guide-text">「入力」タブ最下部の「テーマ」から、ライト・ダーク・サンド・セージの4種類の配色に切り替えられます。</p>
   </div>
 
 </div>
@@ -1121,7 +1163,7 @@
     <div class="story-scroll-hint">↓  SCROLL TO CLOSE</div>
   </div>
   <div class="story-footer">
-    <div class="story-hint">スクリーンショット → ストーリーにシェア</div>
+    <div class="story-hint">スクリーンショット → ストーリーズにシェア</div>
     <button class="story-close-btn" onclick="closeStory()">閉じる</button>
   </div>
 </div>
