@@ -1206,6 +1206,25 @@ function spansMultipleYears(recs) {
   return recs.length > 0 && recs[0].date.slice(0, 4) !== recs[recs.length - 1].date.slice(0, 4);
 }
 
+// グラフの横軸を1日1マスで作る（記録がない日は null にして間隔を実際の日数どおりにする）
+// 7日表示は最新の記録日を右端にした7日間、それ以外は最初の記録日〜最新の記録日
+function buildDailySeries(recs) {
+  const latest = recs[recs.length - 1].date;
+  const byDate = new Map(recs.map(r => [r.date, r.weight]));
+  const d = parseLocalDate(recs[0].date);
+  if (filterDays === 7) {
+    d.setTime(parseLocalDate(latest).getTime());
+    d.setDate(d.getDate() - 6);
+  }
+  const withYear = d.getFullYear() !== parseLocalDate(latest).getFullYear();
+  const labels = [], data = [];
+  for (let ds = localDateString(d); ds <= latest; d.setDate(d.getDate() + 1), ds = localDateString(d)) {
+    labels.push(chartLabel(ds, withYear));
+    data.push(byDate.has(ds) ? byDate.get(ds) : null);
+  }
+  return { labels, data };
+}
+
 function saveLocal() {
   localStorage.setItem('weight_records', JSON.stringify(records));
   localStorage.setItem('weight_goal', goalWeight);
@@ -1747,25 +1766,7 @@ function updateChart() {
   emptyEl.classList.remove('show');
   canvasEl.style.visibility = 'visible';
 
-  let labels, data;
-  if (filterDays === 7) {
-    // 最新の記録日を右端にした7日分の軸を作り、記録がない日はギャップにする
-    const latest = filtered[filtered.length - 1].date;
-    const byDate = new Map(filtered.map(r => [r.date, r.weight]));
-    const d = parseLocalDate(latest);
-    d.setDate(d.getDate() - 6);
-    labels = []; data = [];
-    for (let i = 0; i < 7; i++) {
-      const ds = localDateString(d);
-      labels.push(`${d.getMonth()+1}/${d.getDate()}`);
-      data.push(byDate.has(ds) ? byDate.get(ds) : null);
-      d.setDate(d.getDate() + 1);
-    }
-  } else {
-    const withYear = spansMultipleYears(filtered);
-    labels = filtered.map(r => chartLabel(r.date, withYear));
-    data = filtered.map(r => r.weight);
-  }
+  const { labels, data } = buildDailySeries(filtered);
 
   const allWeights = data.filter(v => v !== null);
   if (goalWeight > 0) allWeights.push(goalWeight);
@@ -1791,6 +1792,7 @@ function updateChart() {
       pointRadius: pointRadii,
       pointHoverRadius: 7,
       spanGaps: true,
+      cubicInterpolationMode: 'monotone',
       tension: 0.3,
       fill: true,
     }
@@ -2018,25 +2020,7 @@ function renderStoryChart() {
   }
 
   // グラフ
-  let labels, data;
-  if (filterDays === 7) {
-    // 最新の記録日を右端にした7日分の軸を作り、記録がない日はギャップにする
-    const latestDate = filtered[filtered.length - 1].date;
-    const byDate = new Map(filtered.map(r => [r.date, r.weight]));
-    const dd = parseLocalDate(latestDate);
-    dd.setDate(dd.getDate() - 6);
-    labels = []; data = [];
-    for (let i = 0; i < 7; i++) {
-      const ds = localDateString(dd);
-      labels.push(`${dd.getMonth()+1}/${dd.getDate()}`);
-      data.push(byDate.has(ds) ? byDate.get(ds) : null);
-      dd.setDate(dd.getDate() + 1);
-    }
-  } else {
-    const withYear = spansMultipleYears(filtered);
-    labels = filtered.map(r => chartLabel(r.date, withYear));
-    data = filtered.map(r => r.weight);
-  }
+  const { labels, data } = buildDailySeries(filtered);
 
   const allW = data.filter(v => v !== null);
   if (goalWeight > 0) allW.push(goalWeight);
@@ -2058,6 +2042,7 @@ function renderStoryChart() {
     pointBorderWidth: 0,
     pointRadius: storyPointRadii,
     spanGaps: true,
+    cubicInterpolationMode: 'monotone',
     tension: 0.35,
     fill: true,
   }];
